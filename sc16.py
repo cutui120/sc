@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+
 """
 代谢工程机器学习管道
 用于预测优化麦角硫因产量的基因表达组合
@@ -33,75 +33,9 @@ try:
 except ImportError:
     HAS_MATPLOTLIB = False
 
-np.random.seed(42)
 
 
-class MetaboMLPipeline:
-    """代谢工程机器学习管道"""
-    
-    def __init__(self, n_genes=50, n_samples=200):
-        self.n_genes = n_genes
-        self.n_samples = n_samples
-        self.scaler = StandardScaler()
-        self.model = None
-        self.feature_selector = None
-        self.optimal_expression = None
-        
-    def generate_synthetic_data(self):
-       
-        print("数据...")
-        np.random.seed(42)
-        
-        # 基础表达水平
-        base_expression = np.random.normal(8, 2, (self.n_samples, self.n_genes))
-        
-        # 模拟关键基因之间的相互作用
-        for i in range(10):
-            if i < 5:
-                base_expression[:, i] += np.random.normal(1, 0.5, self.n_samples)
-            else:
-                base_expression[:, i] -= np.random.normal(0.5, 0.3, self.n_samples)
-        
-        n_labeled = int(self.n_samples * 0.3)
-        
-        def calculate_yield(X):
-            """麦角硫因产量"""
-            key_genes = X[:, :10]
-            gene1_saturation = 1 - np.exp(-key_genes[:, 0]/2)
-            gene2_inhibition = 1 / (1 + np.exp(-(key_genes[:, 1] - 7)))
-            interaction = key_genes[:, 2] * key_genes[:, 3] * 0.1
-            interaction2 = key_genes[:, 4] / (1 + np.abs(key_genes[:, 5]) + 1e-10)
-            
-            yield_value = (
-                gene1_saturation * 10 +
-                gene2_inhibition * 8 +
-                interaction * 5 -
-                interaction2 * 3 +
-                np.sum(key_genes[:, 6:10] * [0.5, -0.3, 0.8, -0.2], axis=1)
-            )
-            noise = np.random.normal(0, 1, len(yield_value))
-            return yield_value + noise
-        
-        full_yield = calculate_yield(base_expression)
-        
-        labeled_mask = np.zeros(self.n_samples, dtype=bool)
-        labeled_indices = np.random.choice(self.n_samples, n_labeled, replace=False)
-        labeled_mask[labeled_indices] = True
-        
-        gene_names = [f'Gene_{i:03d}' for i in range(self.n_genes)]
-        df_expression = pd.DataFrame(base_expression, columns=gene_names)
-        df_expression['Yield'] = np.nan
-        df_expression.loc[labeled_mask, 'Yield'] = full_yield[labeled_mask]
-        df_expression['Strain_ID'] = [f'Strain_{i:04d}' for i in range(self.n_samples)]
-        df_expression['Labeled'] = labeled_mask
-        df_expression['Culture_Condition'] = np.random.choice(['Aerobic', 'Anaerobic'], self.n_samples)
-        df_expression['Growth_Phase'] = np.random.choice(['Log', 'Stationary'], self.n_samples)
-        df_expression['OD600'] = np.random.uniform(0.5, 2.0, self.n_samples)
-        
-        print(f"数据生成完成：{self.n_samples}个样本，{self.n_genes}个基因")
-        print(f"有标签样本：{n_labeled}个，无标签样本：{self.n_samples - n_labeled}个")
-        
-        return df_expression
+
     
     def advanced_feature_engineering(self, df_expression):
         """高级特征工程"""
@@ -612,3 +546,4 @@ if __name__ == "__main__":
     print("  - z2/optimized_strains.csv: 优化后的菌株数据")
     print("  - z2/dbtl_results.csv: DBTL循环结果")
     print("  - z2/dbtl_progress.png: DBTL进展图")
+
